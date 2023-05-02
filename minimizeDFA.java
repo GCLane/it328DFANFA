@@ -36,23 +36,25 @@ public class minimizeDFA{
         String transitions = getTransitions(read);
         int numTransitions = transitions.length();
         //Map the states to their tansition states
-        int[][] statesMatrix = new int[numStates][numTransitions];
-        fillStates(statesMatrix, numStates, numTransitions, read);
+        int[][] statesMatrix = fillStates(numStates, numTransitions, read);
         //Get the initial State
         int initialState = getInitialState(read);
         //Get the accepting states
-        int[] acceptingStates = getAcceptingState(read);
+        int[] acceptingStates = getAcceptingStates(read);
         //Manke the Minimization Table for the states
         boolean[][] minTable = fillMinTable(statesMatrix, acceptingStates, numStates, numTransitions);
-        int[] equalStates = new int[numStates];
+        int[] equalStates = new int[numStates]; //passed by reference
         int numNewStates = getEquivalentStates(minTable, numStates, equalStates);
         int[][] newStateMatrix = newStateMatrix(statesMatrix, equalStates, numStates, numTransitions, numNewStates);
         int[] newAcceptStates = getNewAcceptingStates(acceptingStates, equalStates, numStates);
         int newInitialState = getNewInitialState(equalStates, initialState);
 
-        String writefilename = "test.txt";
+        String writefilename = "minDFA.txt";
         ArrayList<String> testStrings = getTestStrings(read);
-        printDFA(filename, writefilename, testStrings, transitions, newStateMatrix, numStates, numNewStates, numTransitions, newAcceptStates, newInitialState, equalStates);
+        printDFA(filename, writefilename, testStrings, transitions, newStateMatrix, numStates, numNewStates, numTransitions, newAcceptStates, newInitialState);
+        //Tests for part C
+        printDFA(filename, "stuC.txt", testStrings, transitions, statesMatrix, numStates, numStates, numTransitions, acceptingStates, initialState);
+        read.close();
     }
 
     public static int getNumStates(Scanner read)
@@ -70,9 +72,10 @@ public class minimizeDFA{
         return tokens[1].replaceAll(" ", "");
     }
 
-    public static void fillStates(int [][] statesArr, int numStates, int numTransitions, Scanner read)
+    public static int[][] fillStates(int numStates, int numTransitions, Scanner read)
     {
         read.nextLine();
+        int[][] transTable = new int[numStates][numTransitions];
         for (int i = 0; i < numStates; i++)
         {
             String line = read.nextLine().trim();
@@ -80,10 +83,11 @@ public class minimizeDFA{
             String tranStates = tokens[1].replaceAll(" ", "");
             for (int j = 0; j < numTransitions; j++)
             {
-                statesArr[i][j] = Integer.parseInt(tranStates.charAt(j) + "");
+                transTable[i][j] = Integer.parseInt(tranStates.charAt(j) + "");
             }
         }
         read.nextLine();
+        return transTable;
     }
 
     public static int getInitialState(Scanner read)
@@ -94,7 +98,7 @@ public class minimizeDFA{
         return Integer.parseInt(stateStr);
     }
 
-    public static int[] getAcceptingState(Scanner read)
+    public static int[] getAcceptingStates(Scanner read)
     {
         String line = read.nextLine().trim();
         String[] strTokens = line.split(":");
@@ -111,42 +115,31 @@ public class minimizeDFA{
     public static boolean[][] fillMinTable(int[][] statesMatrix, int[] acceptingStates, int numStates, int numTransitions)
     {
         boolean[][] minTable = new boolean[numStates][numStates];
-        for (int i = 0; i < numStates; i++)
-        {
-            for (int j = 0; j < numStates; j++)
-            {
-                minTable[i][j] = false;
-            }
-        }
 
        
         for (int i = 0; i < numStates; i++)
         {
-            for (int j = 0; j < numStates; j++)
+            for (int j = i+1; j < numStates; j++)
             {
                 if ((isAccepting(acceptingStates, i) && !isAccepting(acceptingStates, j)) || (!isAccepting(acceptingStates, i) && isAccepting(acceptingStates, j)))
                 {
                     minTable[i][j] = true;
                 }
             }
-        }
-
+        }   
 
         for (int i = 0; i < numStates; i++)
         {
-            for (int j = 0; j < numStates; j++)
+            for (int j = i+1; j < numStates; j++)
             {
-                if (!minTable[i][j])
+                for (int k = 0; k < numTransitions; k++)
                 {
-                    for (int k = 0; k < numTransitions; k++)
+                    int state1 = statesMatrix[i][k];
+                    int state2 = statesMatrix[j][k];
+                    if (minTable[state1][state2])
                     {
-                        int state1 = statesMatrix[i][k];
-                        int state2 = statesMatrix[j][k];
-                        if (minTable[state1][state2])
-                        {
-                            minTable[i][j] = true;
-                            break;
-                        }
+                        minTable[i][j] = true;
+                        break;
                     }
                 }
             }
@@ -175,7 +168,7 @@ public class minimizeDFA{
             if(equalStates[i] == -1)
             {
                 equalStates[i] = newNumStates;
-                for (int j = i + 1; j < numStates; j++)
+                for (int j = i+1; j < numStates; j++)
                 {
                     if(!minTable[i][j])
                     {
@@ -228,7 +221,7 @@ public class minimizeDFA{
         return equalStates[curInitialState];
     }
 
-    public static boolean parseDFAString(String input, int[][] stateMatrix, String symbols, int[] equalStates, int[] acceptingStates, int initialState)
+    public static boolean parseDFAString(String input, int[][] stateMatrix, String symbols, int[] acceptingStates, int initialState)
     {
         int curState = initialState;
         for (int i = 0; i < input.length(); i++)
@@ -252,7 +245,7 @@ public class minimizeDFA{
         return false;
     } 
 
-    public static void printDFA(String readfilename, String writefilename, ArrayList<String> testStrings, String symbols, int[][] stateMatrix, int numOldStates, int numStates, int numTransitions, int[] acceptingStates, int initialState, int[] equalStates)
+    public static void printDFA(String readfilename, String writefilename, ArrayList<String> testStrings, String symbols, int[][] stateMatrix, int numOldStates, int numStates, int numTransitions, int[] acceptingStates, int initialState)
     {
         try{
             FileWriter writer = new FileWriter(writefilename);
@@ -291,7 +284,7 @@ public class minimizeDFA{
             int noCount = 0;
             for (int i = 0; i < testStrings.size(); i++)
             {
-                if (parseDFAString(testStrings.get(i), stateMatrix, symbols, equalStates, acceptingStates, initialState))
+                if (parseDFAString(testStrings.get(i), stateMatrix, symbols, acceptingStates, initialState))
                 {
                     writer.write("Yes ");
                     yesCount++;
