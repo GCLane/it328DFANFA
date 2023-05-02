@@ -6,7 +6,6 @@ import java.util.Scanner;
 import java.lang.Integer;
 import java.util.Arrays;
 import java.util.ArrayList;
-
 public class minimizeDFA{
     public static void main(String[] args) {
         
@@ -310,7 +309,6 @@ public class minimizeDFA{
     public static ArrayList<String> getTestStrings(Scanner read)
     {
         ArrayList<String> strings = new ArrayList<String>();
-        read.nextLine();
         read.nextLine();
         read.nextLine();
         String line;
