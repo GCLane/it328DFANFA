@@ -6,9 +6,6 @@ import java.util.Scanner;
 import java.lang.Integer;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
 
 public class minimizeDFA{
     public static void main(String[] args) {
